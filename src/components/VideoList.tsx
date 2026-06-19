@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 interface VideoListProps {
   videos: Video[]
-  onPlay: (url: string) => void
+  onPlay: (video: Video) => void
   onImport: (url: string) => Promise<void>
   onToggleFavourite: (video: Video) => void
   onDelete: (id: string) => void
@@ -79,7 +79,7 @@ export function VideoList({
             </Button>
             <button
               className="flex flex-1 items-center gap-2 text-left"
-              onClick={() => onPlay(video.webUrl)}
+              onClick={() => onPlay(video)}
             >
               <img
                 src={video.thumbnailUrl}

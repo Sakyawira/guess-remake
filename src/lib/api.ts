@@ -1,6 +1,22 @@
 /** Base URL of the NestJS API. Override with VITE_API_BASE at build time. */
 export const API_BASE: string = import.meta.env.VITE_API_BASE ?? 'http://localhost:3000'
 
+/** Builds an autoplaying YouTube embed URL, optionally starting at `startSeconds`. */
+export function youtubeEmbedUrl(webUrl: string, startSeconds = 0): string {
+  let id = ''
+  try {
+    const url = new URL(webUrl)
+    id =
+      url.searchParams.get('v') ??
+      url.pathname.split('/').filter(Boolean).pop() ??
+      ''
+  } catch {
+    id = webUrl
+  }
+  const start = Math.max(0, Math.floor(startSeconds))
+  return `https://www.youtube.com/embed/${id}?autoplay=1&start=${start}`
+}
+
 export interface Transcription {
   startTime: number
   phrase: string
@@ -13,6 +29,7 @@ export interface Video {
   webUrl: string
   thumbnailUrl: string
   isFavourite: boolean
+  viewCount: number
   transcriptions: Transcription[]
 }
 
@@ -20,10 +37,6 @@ export interface LeaderBoardEntry {
   id: string
   playerName: string
   score: number
-}
-
-interface RandomTranscription extends Transcription {
-  video: string
 }
 
 /** Normalises a raw API video (Mongo `_id`) into our `Video` shape. */
@@ -35,6 +48,7 @@ function normaliseVideo(raw: any): Video {
     webUrl: raw.webUrl,
     thumbnailUrl: raw.thumbnailUrl,
     isFavourite: raw.isFavourite,
+    viewCount: raw.viewCount ?? 0,
     transcriptions: raw.transcriptions ?? [],
   }
 }
@@ -54,12 +68,6 @@ export const api = {
   listVideos: async (): Promise<Video[]> =>
     (await request<any[]>('/videos')).map(normaliseVideo),
 
-  randomVideo: async (): Promise<Video> =>
-    normaliseVideo(await request<any>('/videos/random')),
-
-  getVideo: async (id: string): Promise<Video> =>
-    normaliseVideo(await request<any>(`/videos/${id}`)),
-
   importVideo: (url: string): Promise<Video> =>
     request('/videos/import', { method: 'POST', body: JSON.stringify({ url }) }),
 
@@ -71,9 +79,6 @@ export const api = {
 
   deleteVideo: (id: string): Promise<void> =>
     request(`/videos/${id}`, { method: 'DELETE' }),
-
-  randomTranscription: (): Promise<RandomTranscription> =>
-    request('/transcriptions/random'),
 
   listLeaderBoard: (): Promise<LeaderBoardEntry[]> =>
     request('/leaderboards'),

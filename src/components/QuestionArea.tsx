@@ -1,23 +1,29 @@
 import { useState } from 'react'
-import { api, type Video } from '@/lib/api'
+import type { Video } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 interface QuestionAreaProps {
+  videos: Video[]
   disabled: boolean
-  onPlay: (url: string) => void
+  onReveal: (video: Video | null) => void
   onCorrect: () => void
   onWrong: () => void
 }
 
 interface Question {
-  phrase: string
+  targetViews: number
   answerId: string
-  startTime: number
   choices: Video[]
 }
 
 type Feedback = 'correct' | 'wrong' | null
+
+const formatViews = (n: number) =>
+  new Intl.NumberFormat('en', {
+    notation: 'compact',
+    maximumFractionDigits: 1,
+  }).format(n)
 
 function shuffle<T>(items: T[]): T[] {
   const copy = [...items]
@@ -29,36 +35,30 @@ function shuffle<T>(items: T[]): T[] {
 }
 
 export function QuestionArea({
+  videos,
   disabled,
-  onPlay,
+  onReveal,
   onCorrect,
   onWrong,
 }: QuestionAreaProps) {
   const [question, setQuestion] = useState<Question | null>(null)
   const [feedback, setFeedback] = useState<Feedback>(null)
-  const [isLoading, setIsLoading] = useState(false)
   const [answered, setAnswered] = useState(false)
 
-  const generate = async () => {
-    setIsLoading(true)
+  const enoughVideos = videos.length >= 3
+
+  const generate = () => {
+    if (!enoughVideos) return
+    const picks = shuffle(videos).slice(0, 3)
+    const answer = picks[Math.floor(Math.random() * picks.length)]
+    setQuestion({
+      targetViews: answer.viewCount,
+      answerId: answer.id,
+      choices: picks,
+    })
     setFeedback(null)
     setAnswered(false)
-    try {
-      const lyric = await api.randomTranscription()
-      const [answer, decoyA, decoyB] = await Promise.all([
-        api.getVideo(lyric.video),
-        api.randomVideo(),
-        api.randomVideo(),
-      ])
-      setQuestion({
-        phrase: lyric.phrase,
-        answerId: answer.id,
-        startTime: lyric.startTime,
-        choices: shuffle([answer, decoyA, decoyB]),
-      })
-    } finally {
-      setIsLoading(false)
-    }
+    onReveal(null)
   }
 
   const choose = (choice: Video) => {
@@ -67,10 +67,14 @@ export function QuestionArea({
     if (choice.id === question.answerId) {
       setFeedback('correct')
       onCorrect()
-      onPlay(`${choice.webUrl}&t=${question.startTime}s`)
     } else {
       setFeedback('wrong')
       onWrong()
+    }
+    // Reveal the correct video (play it + show its stats), win or lose.
+    const answer = question.choices.find((c) => c.id === question.answerId)
+    if (answer) {
+      onReveal(answer)
     }
   }
 
@@ -78,7 +82,9 @@ export function QuestionArea({
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-red-500">
-          Which song contains these lyrics?
+          {question
+            ? `Which video has ${formatViews(question.targetViews)} views?`
+            : 'Which video has the most views?'}
         </CardTitle>
         <div className="flex items-center gap-3">
           {feedback === 'correct' && (
@@ -87,32 +93,35 @@ export function QuestionArea({
           {feedback === 'wrong' && (
             <span className="text-sm font-medium text-red-500">Wrong!</span>
           )}
-          <Button onClick={generate} disabled={isLoading || disabled}>
-            {isLoading ? 'Loading…' : 'Get new question'}
+          <Button onClick={generate} disabled={disabled || !enoughVideos}>
+            Get new question
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {question && (
-          <p className="text-xl font-semibold">"{question.phrase}"</p>
+      <CardContent>
+        {!enoughVideos ? (
+          <p className="text-sm text-muted-foreground">
+            Add at least 3 videos to start playing.
+          </p>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-3">
+            {question?.choices.map((choice) => (
+              <button
+                key={choice.id}
+                onClick={() => choose(choice)}
+                disabled={answered}
+                className="flex items-center gap-2 rounded-md border p-2 text-left transition hover:bg-accent disabled:opacity-60"
+              >
+                <img
+                  src={choice.thumbnailUrl}
+                  alt=""
+                  className="h-12 w-20 rounded object-cover"
+                />
+                <span className="text-sm font-medium">{choice.videoTitle}</span>
+              </button>
+            ))}
+          </div>
         )}
-        <div className="grid gap-3 sm:grid-cols-3">
-          {question?.choices.map((choice) => (
-            <button
-              key={choice.id}
-              onClick={() => choose(choice)}
-              disabled={answered}
-              className="flex items-center gap-2 rounded-md border p-2 text-left transition hover:bg-accent disabled:opacity-60"
-            >
-              <img
-                src={choice.thumbnailUrl}
-                alt=""
-                className="h-12 w-20 rounded object-cover"
-              />
-              <span className="text-sm font-medium">{choice.videoTitle}</span>
-            </button>
-          ))}
-        </div>
       </CardContent>
     </Card>
   )

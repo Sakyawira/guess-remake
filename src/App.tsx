@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
-import ReactPlayer from 'react-player'
-import { api, type LeaderBoardEntry, type Video } from '@/lib/api'
+import { api, youtubeEmbedUrl, type LeaderBoardEntry, type Video } from '@/lib/api'
 import { useGameSocket } from '@/lib/socket'
 import { useTheme } from '@/lib/useTheme'
 import { Header } from '@/components/Header'
 import { QuestionArea } from '@/components/QuestionArea'
 import { VideoList } from '@/components/VideoList'
+import { VideoStats } from '@/components/VideoStats'
 import { LeaderBoard } from '@/components/LeaderBoard'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -16,7 +16,7 @@ const STARTING_LIVES = 3
 export default function App() {
   const { isDark, toggle } = useTheme()
   const [videos, setVideos] = useState<Video[]>([])
-  const [playingUrl, setPlayingUrl] = useState('')
+  const [playing, setPlaying] = useState<Video | null>(null)
   const [score, setScore] = useState(0)
   const [lives, setLives] = useState(STARTING_LIVES)
   const [name, setName] = useState('')
@@ -95,28 +95,33 @@ export default function App() {
           </div>
         ) : (
           <QuestionArea
+            videos={videos}
             disabled={isGameOver}
-            onPlay={setPlayingUrl}
+            onReveal={setPlaying}
             onCorrect={() => setScore((s) => s + 100)}
             onWrong={() => setLives((l) => Math.max(0, l - 1))}
           />
         )}
 
         <div className="grid gap-6 md:grid-cols-2">
-          <div className="aspect-video overflow-hidden rounded-md bg-black">
-            {playingUrl && (
-              <ReactPlayer
-                src={playingUrl}
-                controls
-                playing
-                width="100%"
-                height="100%"
-              />
-            )}
+          <div className="space-y-2">
+            <div className="aspect-video overflow-hidden rounded-md bg-black">
+              {playing && (
+                <iframe
+                  key={playing.id}
+                  src={youtubeEmbedUrl(playing.webUrl, playing.videoLength * 0.25)}
+                  title={playing.videoTitle}
+                  className="h-full w-full"
+                  allow="autoplay; encrypted-media; picture-in-picture"
+                  allowFullScreen
+                />
+              )}
+            </div>
+            {playing && <VideoStats video={playing} />}
           </div>
           <VideoList
             videos={videos}
-            onPlay={setPlayingUrl}
+            onPlay={setPlaying}
             onImport={importVideo}
             onToggleFavourite={toggleFavourite}
             onDelete={deleteVideo}
