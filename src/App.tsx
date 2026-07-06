@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { Coins, Globe, Heart } from 'lucide-react'
 import { api, youtubeEmbedUrl, type LeaderBoardEntry, type Video } from '@/lib/api'
 import { useGameSocket } from '@/lib/socket'
 import { useTheme } from '@/lib/useTheme'
@@ -17,10 +18,17 @@ export default function App() {
   const { isDark, toggle } = useTheme()
   const [videos, setVideos] = useState<Video[]>([])
   const [playing, setPlaying] = useState<Video | null>(null)
+  const [others, setOthers] = useState<Video[]>([])
   const [score, setScore] = useState(0)
   const [lives, setLives] = useState(STARTING_LIVES)
   const [name, setName] = useState('')
   const [board, setBoard] = useState<LeaderBoardEntry[] | null>(null)
+  const [gameId, setGameId] = useState(0)
+
+  const reveal = (video: Video | null, comparison: Video[] = []) => {
+    setPlaying(video)
+    setOthers(comparison)
+  }
 
   const refreshVideos = useCallback(() => {
     api.listVideos().then(setVideos)
@@ -61,6 +69,7 @@ export default function App() {
     setLives(STARTING_LIVES)
     setName('')
     setBoard(null)
+    setGameId((id) => id + 1)
   }
 
   const isGameOver = lives === 0
@@ -71,9 +80,18 @@ export default function App() {
 
       <main className="mx-auto max-w-5xl space-y-6 p-6">
         <div className="flex justify-center gap-3">
-          <Badge variant="secondary">{usersOnline} online</Badge>
-          <Badge variant="secondary">{score} points</Badge>
-          <Badge variant="secondary">{lives} lives</Badge>
+          <Badge variant="secondary" className="gap-1">
+            <Globe className="size-4 text-green-500" />
+            {usersOnline} online
+          </Badge>
+          <Badge variant="secondary" className="gap-1">
+            <Coins className="size-4 text-yellow-500" />
+            {score} points
+          </Badge>
+          <Badge variant="secondary" className="gap-1">
+            <Heart className="size-4 text-pink-500" />
+            {lives} lives
+          </Badge>
         </div>
 
         {isGameOver ? (
@@ -95,9 +113,10 @@ export default function App() {
           </div>
         ) : (
           <QuestionArea
+            key={gameId}
             videos={videos}
             disabled={isGameOver}
-            onReveal={setPlaying}
+            onReveal={reveal}
             onCorrect={() => setScore((s) => s + 100)}
             onWrong={() => setLives((l) => Math.max(0, l - 1))}
           />
@@ -118,10 +137,18 @@ export default function App() {
               )}
             </div>
             {playing && <VideoStats video={playing} />}
+            {others.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">Other options</p>
+                {others.map((video) => (
+                  <VideoStats key={video.id} video={video} />
+                ))}
+              </div>
+            )}
           </div>
           <VideoList
             videos={videos}
-            onPlay={setPlaying}
+            onPlay={(v) => reveal(v)}
             onImport={importVideo}
             onToggleFavourite={toggleFavourite}
             onDelete={deleteVideo}

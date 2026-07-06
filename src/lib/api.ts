@@ -30,6 +30,7 @@ export interface Video {
   thumbnailUrl: string
   isFavourite: boolean
   viewCount: number
+  releaseDate: string
   transcriptions: Transcription[]
 }
 
@@ -49,6 +50,7 @@ function normaliseVideo(raw: any): Video {
     thumbnailUrl: raw.thumbnailUrl,
     isFavourite: raw.isFavourite,
     viewCount: raw.viewCount ?? 0,
+    releaseDate: raw.releaseDate ?? '',
     transcriptions: raw.transcriptions ?? [],
   }
 }

@@ -12,6 +12,9 @@ const formatDuration = (seconds: number) => {
   return `${m}:${s}`
 }
 
+const formatDate = (iso: string) =>
+  iso ? new Date(iso).toLocaleDateString('en-GB') : ''
+
 export function VideoStats({ video }: { video: Video }) {
   return (
     <div className="rounded-md border p-3">
@@ -19,6 +22,7 @@ export function VideoStats({ video }: { video: Video }) {
       <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
         <span>{formatViews(video.viewCount)} views</span>
         <span>{formatDuration(video.videoLength)}</span>
+        {video.releaseDate && <span>{formatDate(video.releaseDate)}</span>}
         {video.isFavourite && <span>★ favourite</span>}
       </div>
     </div>
