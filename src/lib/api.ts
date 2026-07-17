@@ -1,5 +1,6 @@
 /** Base URL of the NestJS API. Override with VITE_API_BASE at build time. */
 export const API_BASE: string = import.meta.env.VITE_API_BASE ?? 'http://localhost:3000'
+export const API_KEY: string | undefined = import.meta.env.VITE_API_KEY
 
 /** Builds an autoplaying YouTube embed URL, optionally starting at `startSeconds`. */
 export function youtubeEmbedUrl(webUrl: string, startSeconds = 0): string {
@@ -56,9 +57,15 @@ function normaliseVideo(raw: any): Video {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const headers = new Headers(init?.headers)
+  headers.set('Content-Type', 'application/json')
+  if (API_KEY) {
+    headers.set('X-API-Key', API_KEY)
+  }
+
   const res = await fetch(`${API_BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
     ...init,
+    headers,
   })
   if (!res.ok) {
     throw new Error(`${res.status} ${res.statusText}`)

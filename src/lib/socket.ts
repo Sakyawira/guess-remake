@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { io, type Socket } from 'socket.io-client'
-import { API_BASE } from './api'
+import { API_BASE, API_KEY } from './api'
 
 export interface GameEvents {
   onVideoAdded?: () => void
@@ -18,7 +18,10 @@ export function useGameSocket(events: GameEvents = {}): { usersOnline: number } 
   eventsRef.current = events
 
   useEffect(() => {
-    const socket: Socket = io(API_BASE, { transports: ['websocket'] })
+    const socket: Socket = io(API_BASE, {
+      auth: API_KEY ? { apiKey: API_KEY } : undefined,
+      transports: ['websocket'],
+    })
 
     socket.on('connect', () => socket.emit('BroadcastMessage'))
     socket.on('CountUsers', (count: number) => setUsersOnline(count))
