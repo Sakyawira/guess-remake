@@ -2,7 +2,7 @@
 
 A music-guessing trivia game where players identify songs based on metadata clues (view count, release date, duration) then reveal the answer with an embedded YouTube player.
 
-This is a modern rewrite of [Guess](https://github.com/Sakyawira/Guess), originally built with Angular as a university project in 2019.
+This is a modern rewrite of [Guess](https://github.com/Sakyawira/Guess), originally built with React as a university project in 2019.
 
 ## Tech Stack
 
