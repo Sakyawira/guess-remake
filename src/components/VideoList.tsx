@@ -1,81 +1,68 @@
-import { useState } from 'react'
-import { Star, X } from 'lucide-react'
-import type { Video } from '@/lib/api'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Star } from 'lucide-react';
+import type { Video } from '@/lib/api';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';
+import { Spinner } from '@/components/ui/spinner';
 
 interface VideoListProps {
-  videos: Video[]
-  onPlay: (video: Video) => void
-  onImport: (url: string) => Promise<void>
-  onToggleFavourite: (video: Video) => void
-  onDelete: (id: string) => void
+  videos: Video[];
+  onPlay: (video: Video) => void;
+  onToggleFavourite: (video: Video) => void;
+  onLoadMore: () => void;
+  hasMore: boolean;
+  isLoading: boolean;
 }
 
 export function VideoList({
   videos,
   onPlay,
-  onImport,
   onToggleFavourite,
-  onDelete,
+  onLoadMore,
+  hasMore,
+  isLoading,
 }: VideoListProps) {
-  const [url, setUrl] = useState('')
-  const [isAdding, setIsAdding] = useState(false)
-
-  const addVideo = async () => {
-    if (!url.trim()) return
-    setIsAdding(true)
-    try {
-      await onImport(url.trim())
-      setUrl('')
-    } finally {
-      setIsAdding(false)
-    }
-  }
-
-  // Favourited videos float to the top.
-  const ordered = [...videos].sort(
-    (a, b) => Number(b.isFavourite) - Number(a.isFavourite),
-  )
-
+  const ordered = [...videos].sort((a, b) => Number(b.isFavourite) - Number(a.isFavourite));
   return (
     <Card className="h-full">
       <CardHeader>
-        <CardTitle>
-          <span className="text-red-500">video</span>List
-        </CardTitle>
-        <div className="flex gap-2">
-          <Input
-            placeholder="Add Video URL"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && addVideo()}
-          />
-          <Button onClick={addVideo} disabled={isAdding}>
-            {isAdding ? '…' : '+'}
-          </Button>
-        </div>
+        <CardTitle>Video library</CardTitle>
+        <CardDescription>
+          Favourites are personal to this browser. Load more videos to expand the question pool.
+        </CardDescription>
       </CardHeader>
-      <CardContent className="max-h-[420px] space-y-2 overflow-y-auto">
+      <CardContent
+        className="flex max-h-[420px] flex-col gap-2 overflow-y-auto"
+        aria-busy={isLoading}
+      >
+        {videos.length === 0 && !isLoading && (
+          <Empty>
+            <EmptyHeader>
+              <EmptyTitle>No videos available</EmptyTitle>
+              <EmptyDescription>
+                A site administrator must add videos before you can play.
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        )}
         {ordered.map((video) => (
-          <div
-            key={video.id}
-            className="flex items-center gap-2 rounded-md border p-2"
-          >
+          <div key={video.id} className="flex items-center gap-2 rounded-md border p-2">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => onToggleFavourite(video)}
-              aria-label="Toggle favourite"
+              aria-label={`Favourite ${video.videoTitle}`}
+              aria-pressed={video.isFavourite}
             >
-              <Star
-                className={
-                  video.isFavourite
-                    ? 'size-4 fill-yellow-400 text-yellow-400'
-                    : 'size-4'
-                }
-              />
+              <Star data-icon="inline-start" className={cn(video.isFavourite && 'fill-current')} />
             </Button>
             <button
               className="flex flex-1 items-center gap-2 text-left"
@@ -85,20 +72,24 @@ export function VideoList({
                 src={video.thumbnailUrl}
                 alt=""
                 className="h-10 w-16 rounded object-cover"
+                loading="lazy"
               />
               <span className="text-sm font-medium">{video.videoTitle}</span>
             </button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onDelete(video.id)}
-              aria-label="Delete video"
-            >
-              <X className="size-4" />
-            </Button>
           </div>
         ))}
       </CardContent>
+      <CardFooter className="justify-between gap-3">
+        <span className="text-sm text-muted-foreground" aria-live="polite">
+          {videos.length} videos loaded
+        </span>
+        {isLoading && <Spinner aria-label="Loading videos" />}
+        {hasMore && (
+          <Button variant="outline" onClick={onLoadMore} disabled={isLoading}>
+            {isLoading ? 'Loading…' : 'Load more videos'}
+          </Button>
+        )}
+      </CardFooter>
     </Card>
-  )
+  );
 }

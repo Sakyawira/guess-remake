@@ -1,15 +1,16 @@
-import type { LeaderBoardEntry } from '@/lib/api'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import type { LeaderBoardEntry } from '@/lib/api';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface LeaderBoardProps {
-  entries: LeaderBoardEntry[]
+  entries: LeaderBoardEntry[];
 }
 
 export function LeaderBoard({ entries }: LeaderBoardProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-red-500">Leaderboard</CardTitle>
+        <CardTitle>Leaderboard</CardTitle>
+        <CardDescription>Top 100 scores</CardDescription>
       </CardHeader>
       <CardContent>
         <table className="w-full text-sm">
@@ -30,5 +31,5 @@ export function LeaderBoard({ entries }: LeaderBoardProps) {
         </table>
       </CardContent>
     </Card>
-  )
+  );
 }
