@@ -42,7 +42,7 @@ npm run build      # outputs to dist/
 npm run preview    # preview the production build
 ```
 
-Pushing to `main` triggers `.github/workflows/deploy.yml`, which builds and publishes to GitHub Pages. Set the `VITE_API_BASE` and `VITE_API_KEY` repository variables (Settings → Variables). The gameplay key must match the backend `API_KEY`.
+Pushing to `main` triggers `.github/workflows/deploy.yml`, which builds and publishes to GitHub Pages. Set the `VITE_API_BASE` repository variable and `VITE_API_KEY` Actions secret. The gameplay key must match the backend `API_KEY`. The workflow prefers the secret and temporarily supports the legacy variable.
 
 ## Project Structure
 
@@ -100,8 +100,9 @@ This remains a casual game: scores are client-reported, not server-verified anti
 2. For default GitHub Pages hosting, include **`https://sakyawira.github.io`** in
    backend `CORS_ORIGINS`. Do not include `/guess-remake/` or a trailing slash. A
    custom domain requires its own exact origin. Add localhost origins for local testing.
-3. Set this repository's public `VITE_API_BASE` (HTTPS backend URL) and `VITE_API_KEY`
-   (matching gameplay key), then deploy the frontend.
+3. Set this repository's `VITE_API_BASE` variable (HTTPS backend URL) and
+   `VITE_API_KEY` Actions secret (matching gameplay key), then deploy the frontend.
+   A GitHub secret still becomes browser-visible when compiled as a Vite variable.
 4. Confirm video loading, local favourites, load-more, score submission and WebSocket
    updates. Import/delete controls must not appear in the public UI.
 
@@ -120,3 +121,10 @@ npm test
 npm run build
 npm audit
 ```
+
+### Configure the gameplay key with GitHub CLI
+
+Run `gh secret set VITE_API_KEY --repo Sakyawira/guess-remake` and enter the gameplay
+key at the secure prompt. Do not pass credentials with `--body` or paste them into
+logs. This is not an administrator secret: Vite embeds it in the public browser
+bundle. Keep `ADMIN_API_KEY` only in the backend repository/Render configuration.
