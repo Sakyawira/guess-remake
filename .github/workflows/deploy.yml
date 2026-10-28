@@ -47,7 +47,7 @@ jobs:
         env:
           VITE_API_BASE: ${{ vars.VITE_API_BASE || 'https://api.example' }}
           VITE_API_KEY: ${{ secrets.VITE_API_KEY || vars.VITE_API_KEY || 'ci-gameplay-key' }}
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         with:
           path: dist
